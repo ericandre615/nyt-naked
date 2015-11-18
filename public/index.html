@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NYT API Feed</title>
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <main role="main" class="container">
+    <h1>NYT - API Feed</h1>
+    <h2>10 Most Recent Articles</h2>
+    <ul id="articles-recent"></ul>
+    <h2>Average Articles Per Day of the Week, 2014</h2>
+    <ul id="articles-average"></ul>
+  </main>
+<script src="js/kickback.min.js"></script>
+<script type="text/javascript">
+  var APIKey = '312441b1ecc59dfe407191a5560c534a:19:73435856';
+  var nytURL = 'http://api.nytimes.com/svc/search/v2/articlesearch.json?api-key=';
+
+  var averageList = document.getElementById('articles-average');
+  var recentList = document.getElementById('articles-recent');
+
+  kickback.request(nytURL + APIKey + '&sort=newest&fl=headline')
+    .then(function(response) {
+      var articles = JSON.parse(response).response.docs;
+
+      articles.forEach(function(item) {
+        var li = document.createElement('li');
+        li.innerHTML = item.headline.main;
+        if(item.headline.name) {
+         li.innerHTML += ' - ' + item.headline.name;
+        }
+        recentList.appendChild(li);
+      });
+    })
+    .then(null, function(err) {
+      console.log('Error: ', err);
+      throw new Error(err);
+    });
+
+  // Average Per Day of Week, 2014
+  var days = [
+    {'day': 'monday', 'occurrences': 52},
+    {'day': 'tuesday', 'occurrences': 52},
+    {'day': 'wednesday', 'occurrences': 53},
+    {'day': 'thursday', 'occurrences': 52},
+    {'day': 'friday', 'occurrences': 52},
+    {'day': 'saturday', 'occurrences': 52},
+    {'day': 'sunday', 'occurrences': 52}
+  ];
+
+  days.forEach(function(day, index, arr) {
+    kickback.request(nytURL + APIKey + '&begin_date=20140101&end_date=20141231&fq=day_of_week:'+day.day)
+      .then(function(response) {
+        var response = JSON.parse(response).response;
+        var li = document.createElement('li');
+        var average = Math.floor(response.meta.hits / day.occurrences);
+
+        li.innerHTML = day.day + ': ' + parseInt(average, 10);
+        averageList.appendChild(li);
+      })
+      .then(null, function(err) {
+        console.log('Error: ', err);
+        throw new Error(err);
+      });
+  });
+</script>
+</body>
+</html>
